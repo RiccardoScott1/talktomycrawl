@@ -1,0 +1,5 @@
+Crawl4AI==0.6.2
+supabase==2.15.0
+langchain==0.3.24
+langchain_community==0.3.22
+langchain-ollama==0.3.2
