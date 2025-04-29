@@ -20,7 +20,7 @@ async def main():
         deep_crawl_strategy=BFSDeepCrawlStrategy(
             max_depth=2,
             include_external=False,
-            max_pages=10
+            #max_pages=10
             ),
         
         # Content processing
@@ -33,7 +33,7 @@ async def main():
     async with AsyncWebCrawler() as crawler:
         # Returns an async iterator
         async for result in await crawler.arun(
-            "https://nexergroup.com", 
+            "https://nexergroup.com",
             config=run_config
             ):
             # Process each result as it becomes available
@@ -50,10 +50,12 @@ def process_result(result):
         except PostgrestAPIError as e:
             print(f"Error inserting into Supabase: {e}")
         
+        try:
+            embed_documents(result_json, sb_client)
+        except Exception as e:
+            print(f"Error embedding documents: {e}")
+        print("Data inserted and embedded successfully.")
 
-        embed_documents(result_json, sb_client)
-
-        
     else:
         print(f"Crawl failed: {result.error_message}")
 

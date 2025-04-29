@@ -6,9 +6,6 @@ from langchain_ollama import OllamaEmbeddings
 from langchain.docstore.document import Document
 
 
-
-
-
 def embed_documents(result, supabase_client):
     """
     This function loads documents from a text file, splits them into chunks, and stores them in a Supabase vector store.
