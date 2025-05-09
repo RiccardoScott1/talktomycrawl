@@ -1,7 +1,21 @@
 -- Enable the pgvector extension to work with embedding vectors
 create extension vector;
 
+-- Create a table to store page dats
+drop table if exists crawled_pages;
+create table crawled_pages (
+  url text,
+  created_at TIMESTAMP DEFAULT NOW(),
+  links jsonb,
+  metadata jsonb,
+  markdown text,
+  html text,
+  cleaned_html text
+);
+
+
 -- Create a table to store your documents
+drop table if exists documents;
 create table documents (
   id bigserial primary key,
   content text, -- corresponds to Document.pageContent
