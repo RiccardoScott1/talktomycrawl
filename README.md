@@ -2,13 +2,14 @@
 init suapbase , run supabase_init.sql on your supabase DB to create tables and functions
 
 
-Start a local Ollama instance and pull nomic-embed-text model
+## Start a local Ollama instance and pull `nomic-embed-text model`
+
 ```bash
 docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
 docker exec -it ollama ollama run nomic-embed-text
 ```
  
-test ollama is working
+## test ollama is working
 ```bash
 curl http://localhost:11434/api/embeddings -d '{
   "model": "nomic-embed-text",
@@ -16,9 +17,20 @@ curl http://localhost:11434/api/embeddings -d '{
 }'
 ```
 
-populate .env file, see .env.example for what's needed.
+## populate .env file
+see .env.example for what's needed.
 
-run crawler
+## install env
+```bash
+make install
+```
+
+## run crawler
+```bash
+make run
+```
+
+
 
 
 
