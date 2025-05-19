@@ -1,4 +1,10 @@
 # talktomycrawl
+
+Article on how to set up a simple RAG with Crawl4ai, supabase, ollama and n8n.
+See article.md . 
+
+
+
 init suapbase , run supabase_init.sql on your supabase DB to create tables and functions
 
 
