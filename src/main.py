@@ -36,7 +36,6 @@ async def main():
             ),
         
     )
-#nexer-navbar
     async with AsyncWebCrawler(
         config=browser_cfg,
         verbose=True,
@@ -53,7 +52,6 @@ async def main():
 
 def process_result(result):
     if result.success:
-        #print("Content:", result.markdown[:500])  # First 500 chars
         result_json = result_dict(result)
         sb_client = get_client()
         try:
