@@ -20,7 +20,7 @@ create table documents (
   id bigserial primary key,
   content text, -- corresponds to Document.pageContent
   metadata jsonb, -- corresponds to Document.metadata
-  embedding vector(768) -- 1536 works for OpenAI embeddings, change if needed
+  embedding vector(768) -- 768 is the dimension of the embedding
 );
 
 -- Create a function to search for documents

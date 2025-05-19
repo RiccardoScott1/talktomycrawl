@@ -5,7 +5,6 @@ from crawl4ai.deep_crawling import BFSDeepCrawlStrategy
 from sb import get_client
 from embed import embed_documents
 from supabase import PostgrestAPIError
-from dataclasses import dataclass
 import os
 
 async def main():
