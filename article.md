@@ -14,6 +14,8 @@ just a RAG but a tool to turn any web-domain into a conversational DB
   * the end result should be shown (i.e. a conversation with the crawled data)
     * this could also be shown at the very beginning, so even people who do not
     intend to read fully can see its effect
+* I would go as far as cutting most technical details which are not directly
+related to setting up the vector DB and the infrastructure on `n8n`.
 
 # ---- COMMENT END ----
 
@@ -44,7 +46,10 @@ intelligent.
 # ---- COMMENT ----
 
 I'd keep only one of the below (could split for article types): either the
-short bulletpoints list or the more detailed subtitles listing, but not both
+short bulletpoints list or the more detailed subtitles listing, but not both.
+Or, in the long technical article, have the bullet points and move the longer
+descriptions to where the tools are being used with code / examples. That would
+be good for signposting.
 
 # ---- COMMENT END ----
 
