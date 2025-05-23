@@ -1,22 +1,3 @@
-# ---- GENERAL COMMENTS: ----
-
-* great content
-* we should also think about (again) splitting it into two versions
-  * a short seller for non-tech people
-  * a more detailed technical writeup
-* the intro could be more punchy by highlighting / emphasising that this is not
-just a RAG but a tool to turn any web-domain into a conversational DB
-  * this would make it distinguishable from all the other RAG stuff
-  * especially useful for the aforementioned non-tech audiences
-* could be made more reader friendly with a few tweaks
-  * long code blocks could be broken-up with the text explanations
-  * a short abstract of building steps could be added
-  * the end result should be shown (i.e. a conversation with the crawled data)
-    * this could also be shown at the very beginning, so even people who do not
-    intend to read fully can see its effect
-
-# ---- COMMENT END ----
-
 
 # talktomycrawl
 
