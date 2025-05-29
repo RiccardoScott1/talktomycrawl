@@ -19,13 +19,15 @@ related to setting up the vector DB and the infrastructure on `n8n`.
 
 # ---- COMMENT END ----
 
-# A simple RAG on crawled data
+# Chat with a web domain.....
 combining crawl4AI , supabase and n8n
 
 # ---- COMMENT: add the punchy intro about chat-w/-domain here ----
 
 ## **Retrieval-Augmented Generation (RAG) - A brief overview**
 
+prompt: rephrase the following for a non-technical audience with an interest in AI.
+"""
 Retrieval-Augmented Generation (RAG) is a powerful technique that combines the
 generative strength of large language models (LLMs) with the precision of
 retrieval-based systems. Instead of relying solely on a model’s internal
@@ -41,7 +43,7 @@ grounded, contextualized answer that’s both coherent and informed by up-to-dat
 data. Whether you're building an internal knowledge assistant or a
 public-facing chatbot, RAG helps ensure your AI is informed, not just
 intelligent.
-
+"""
 
 # ---- COMMENT ----
 
@@ -148,39 +150,13 @@ First, we enable the `pgvector` extension, which allows for storing and
 querying high-dimensional vectors—essential for working with embeddings from 
 language models. We then create two tables. One, `crawled_pages`, which stores
 raw and processed data from web crawls (including HTML, markdown, and
-metadata):
-```sql
--- Enable the pgvector extension to work with embedding vectors
-create extension vector;
-
--- Create a table to store page dats
-drop table if exists crawled_pages;
-create table crawled_pages (
-  url text,
-  created_at TIMESTAMP DEFAULT NOW(),
-  links jsonb,
-  metadata jsonb,
-  markdown text,
-  html text,
-  cleaned_html text
-);
-```
-
-The second table we create is `documents`, which holds the actual vectorized 
+metadata), the second one, `documents`, which holds the actual vectorized 
 content used for semantic search, along with metadata and embeddings of 
-dimension 768. We set the dimension to 768 because we will be using the
+dimension 768. 
+
+We set the dimension to 768 because we will be using the
 [nomic-embed-text](https://ollama.com/library/nomic-embed-text) model for 
 creating our embeddings.
-```sql
--- Create a table to store your documents
-drop table if exists documents;
-create table documents (
-  id bigserial primary key,
-  content text, -- corresponds to Document.pageContent
-  metadata jsonb, -- corresponds to Document.metadata
-  embedding vector(768) -- 768 is the dimension of the embedding
-);
-```
 
 The script also defines a custom SQL function, `match_documents`, which
 performs a vector similarity search using the `<=>` operator to compute cosine
@@ -189,83 +165,11 @@ supports optional filtering based on JSON metadata and returns the most similar
 documents sorted by relevance. This function enables efficient retrieval of 
 contextually relevant content for use in our RAG pipeline.
 
-# ---- COMMENT: could add in-line comments on what is what ----
-
-```sql
--- Create a function to search for documents
-create function match_documents (
-  query_embedding vector(768),
-  match_count int default null,
-  filter jsonb DEFAULT '{}'
-) returns table (
-  id uuid,
-  content text,
-  metadata jsonb,
-  similarity float
-)
-language plpgsql
-as $$
-#variable_conflict use_column
-begin
-  return query
-  select
-    id,
-    content,
-    metadata,
-    1 - (documents.embedding <=> query_embedding) as similarity
-  from documents
-  where metadata @> filter
-  order by documents.embedding <=> query_embedding
-  limit match_count;
-end;
-$$;
-```
 To run the script open the `SQl Editor` in your Supabase project, paste the 
 snippets and click `RUN`.
 ![supabase_init](pictures/supabase_init.png)
 
 
-# ---- COMMENT: also did some restructuring in this bit ----
-
-### Code for crawling and embedding
-
-Next we will set up the code for crawling all the pages on a given domain,
-cleaning, chunking and embedding the content and storing page data and
-embeddings to Supabase.
-
-The repo is structured in the following:
-```
-├── requirements.txt
-├── .env
-├── src
-    ├── embed.py
-    ├── main.py
-    └── sb.py
-```
-
-#### **`.env`**
-We define the project's environment variables here.
-For `SUPABASE_URL` and `SUPABASE_KEY` go to your Supabase project
-`Project Settings`>`Data API`.
-
-```bash
-SUPABASE_URL="<YOUR_SUPABASE_PROJECT_URL>"
-SUPABASE_KEY="<anon public key>"
-SUPABASE_TABLE_NAME_PAGES=crawled_pages
-SUPABASE_TABLE_NAME_DOCUMENTS=documents
-```
-
-
-#### **`requirements.txt`**
-# ---- COMMENT: do we actually need this here? it would be in the repo i assume ----
-The project requirements are the following:
-```
-Crawl4AI==0.6.2
-supabase==2.15.0
-langchain==0.3.24
-langchain_community==0.3.22
-langchain-ollama==0.3.2
-```
 
 #### **`main.py`**
 The `main.py` script orchestrates the full web crawling and document embedding
@@ -289,14 +193,6 @@ more about specific settings
 # ---- COMMENT END ----
 
 ```python
-import asyncio
-from crawl4ai import AsyncWebCrawler
-from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig, CacheMode
-from crawl4ai.deep_crawling import BFSDeepCrawlStrategy
-from sb import get_client  # helper to get the Supabase client
-from embed import embed_documents  # Function to embed crawled documents (see later)
-from supabase import PostgrestAPIError
-import os
 
 async def main():
     url = "https://nexergroup.com"  # Target website for crawling
@@ -308,18 +204,7 @@ async def main():
 
     # Configuration for how the crawler should run
     run_cfg = CrawlerRunConfig(
-        excluded_tags=["script", "style", "form", "header", "footer", "nav"],  # Remove unwanted HTML tags
-        excluded_selector="#nexer-navbar",  # Skip specific page element by CSS selector
-        only_text=True,  # Extract just the text
-        remove_forms=True,  # Skip form elements
-        exclude_social_media_links=True,  # Don't follow social links 
-        exclude_external_links=True,  # Stay within the main domain
-        remove_overlay_elements=True,  # Clean overlays/popups
-        magic=True,  # Let crawler auto-tune settings if needed
-        simulate_user=True,  # Behave like a real user (e.g., scrolling, clicking)
-        override_navigator=True,  # Mask headless browser properties
-        verbose=True,  # Output crawl logs
-        cache_mode=CacheMode.DISABLED,  # Disable caching of visited pages
+        ...
         stream=True,  # Stream results as they're found
 
         # Set up depth-limited crawling strategy (BFS = breadth-first search)
@@ -331,12 +216,7 @@ async def main():
     )
 
     # Initialize the asynchronous crawler with Playwright
-    async with AsyncWebCrawler(
-        config=browser_cfg,
-        verbose=True,
-        debug=True,
-        use_playwright=True,  # Use Playwright for browser automation
-    ) as crawler:
+    async with AsyncWebCrawler(config=browser_cfg) as crawler:
 
         # Crawl the site using provided run configuration
         async for result in await crawler.arun(
@@ -344,80 +224,24 @@ async def main():
             config=run_cfg
         ):
             process_result(result)  # handles the crawl output (one result = one page)
-
-def process_result(result):
-    """
-    Process the result returned from the crawler
-    """
-    if result.success:
-        # Convert result object into a dictionary
-        result_json = result_dict(result)
-
-        # Initialize Supabase client
-        sb_client = get_client()
-
-        try:
-            # Insert the crawled data into Supabase
-            table_name = os.getenv("SUPABASE_TABLE_NAME_PAGES", "crawled_pages")
-
-            sb_client.table(table_name).insert(result_json).execute()
-        except PostgrestAPIError as e:
-            print(f"Error inserting into Supabase: {e}")
-        
-        try:
-            # Generate embeddings for the document and store them using the Supabase client
-            embed_documents(result_json, sb_client)
-        except Exception as e:
-            print(f"Error embedding documents: {e}")
-
-        print("Data inserted and embedded successfully.")
-    
-    else:
-        # Log any crawl failure along with the error message
-        print(f"Crawl failed: {result.error_message}")
-
-def result_dict(result) -> dict:
-    """
-    convert the result object into a dictionary
-    """
-    return {
-        "url": result.url,
-        "links": result.links,
-        "metadata": result.metadata,
-        "markdown": result.markdown,
-        "html": result.html,
-        "cleaned_html": result.cleaned_html,
-    }
-
-# Entry point: runs the main crawler function in an asyncio event loop
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-We will now look into the two modules called by the main.
-
-#### **`sb.py`**
-The `sb` module us defined as a helper to create the Supabase client:
-```python 
-import os
-from supabase import create_client, Client
-
-def get_client()-> Client:
-    """
-    This function creates a Supabase client using the URL and key from environment variables.
-    """
-    url: str = os.environ.get("SUPABASE_URL")
-    key: str = os.environ.get("SUPABASE_KEY")
-    return create_client(url, key)
+...
 ```
 
 
-#### **`embed.py`**
-The `embed_documents` function in `embed.py`, processes and stores crawled web
+#### **Embeddings**
+# ---- COMMENT START -----
+example of an embedding , 
+add exapmle texts and chunks from one page???
+# ---- COMMENT END -----
+
+part of `process_result()` ... The `embed_documents` function in `embed.py`, processes and stores crawled web
 content into our Supabase vector database: 
 - cleaned HTML produced by Crawl4AI 
 - splits it into semantically meaningful chunks using HTML headers
 - embeds each chunk using the `nomic-embed-text` model via Ollama
+
+
+
 
 These embeddings, along with associated metadata, are stored in the Supabase
 `documents` table using LangChain’s `SupabaseVectorStore`. This setup enables
@@ -473,12 +297,6 @@ def embed_documents(result:dict, supabase_client:Client):
     )
 ```
 
-# ---- COMMENT ----
-I think the below should be anchored / linked back to what was said before.
-Maybe with something like "putting it all together" or such. I feel at this
-point we have looked through much code in detail and might feel lost on how
-it all works together.
-# ---- COMMENT END ----
 
 We will have one row per page in `crawled_pages` with useful extracted data
 such internal and external urls, text, html and other metadata (for example:
@@ -488,15 +306,7 @@ as [Open Graph data](https://ogp.me/) ).
 The `documents` table will hold several rows per page, one for each chunk that
 got embedded.
 
-# ---- COMMENT ----
-I would also signpost here too. Referring back to the short step description at
-the beginning of the article ([Implementation](#implementation)).
-I also think going into the details of containerising Ollama might be an 
-overkill / too much. Could just provide the code and refer to another article 
-on using Docker.
-Or maybe even host it locally and say during the putting things together in n8n
-that we could also create a containerised version and use that instead.
-# ---- COMMENT END ----
+
 
 ### Ollama on digital ocean
 Let's walk through the steps to deploy an app on Digital Ocean from a 

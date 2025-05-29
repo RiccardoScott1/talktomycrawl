@@ -17,12 +17,20 @@ just a RAG but a tool to turn any web-domain into a conversational DB
 * I would go as far as cutting most technical details which are not directly
 related to setting up the vector DB and the infrastructure on `n8n`.
 
+
+
+
+TODO make image:
+
+Ollama logo <-> n8n logo with agent <-> supabase logo <-> crawl4ai
+
 # ---- COMMENT END ----
 
 # A simple RAG on crawled data
 combining crawl4AI , supabase and n8n
 
 # ---- COMMENT: add the punchy intro about chat-w/-domain here ----
+
 
 ## **Retrieval-Augmented Generation (RAG) - A brief overview**
 
@@ -55,13 +63,13 @@ be good for signposting.
 
 ## The services and tech needed to crawl a website and chat with the content
 We'll briefly cover the various parts of our RAG prototype made of:
-- a python repo to run **Crawl4AI** locally and embed the documents using a
-local ollama container
-- a **Supabase** database to hold the data (hosted by supabase so n8n can
+- A **Supabase** database to hold the data (hosted by supabase so n8n can
 access it remotely)
 - **n8n** to create a workflow with a chat and AI agent functionality
-- an **Ollama** service deployed on **Digital Ocean** (so n8n can access it
-remotely)
+- A python repo to run **Crawl4AI** locally and embed the documents using a
+local ollama container REF CRAWLER article 
+- An **Ollama** service deployed on **Digital Ocean** (so n8n can access it
+remotely) REF OLLAMA-DO ARTICLE
 
 
 ### n8n
@@ -85,65 +93,25 @@ interface and tight integration with modern toolchains, Supabase is ideal for
 hosting and querying embedded data in RAG applications, enabling fast,
 scalable, and secure data access.
 
-### Crawl4AI
-[**Crawl4AI**](https://docs.crawl4ai.com/) is a lightweight, open-source web
-crawling framework designed specifically for AI and machine learning use cases.
-It simplifies the process of extracting structured content from websites,
-making it easy to gather high-quality text data for tasks like training models
-or building RAG pipelines. With built-in support for filtering, rate limiting,
-and customizable parsing logic, Crawl4AI is ideal for developers looking to
-integrate clean, domain-specific data into LLM workflows.
+## Implementation of a RAG in n8n
 
-
-### LLaMA and ollama
-[**LLaMA (Large Language Model Meta AI)**](https://www.llama.com/) is a family
-of open-source large language models developed by Meta, designed to provide
-high performance while being more resource-efficient than many other models in
-the same class. LLaMA models have been widely adopted in the AI community for 
-their accessibility, strong multilingual capabilities, and ease of fine-tuning 
-on domain-specific tasks. They are particularly well-suited for building local,
-privacy-respecting applications such as RAG (retrieval-augmented generation)
-systems, chatbots, and summarizers—especially when low-latency inference is 
-required without relying on external APIs.
-
-[**Ollama**](https://ollama.com/) is a developer-friendly tool that simplifies 
-the deployment and management of LLaMA and other open-source language models
-via Docker containers (see [git-repo](https://github.com/ollama/ollama) and 
-[docker-hub](https://hub.docker.com/r/ollama/ollama)). It abstracts away the
-complexity of setting up inference servers by offering a clean interface to run 
-models locally with just a few commands. With Ollama, you can easily load, 
-switch, and interact with LLaMA models using HTTP endpoints—making it an
-excellent choice for embedding models into workflows like n8n or integrating
-with data pipelines hosted on platforms like Supabase. This streamlined setup
-allows developers to run powerful LLMs on their own infrastructure, reducing 
-dependencies on cloud-based services and improving control over cost and data
-privacy.
-
-### Digital Ocean
-[**DigitalOcean**](https://www.digitalocean.com/) is a cloud infrastructure 
-provider known for its simplicity and developer-friendly tools. It offers 
-scalable virtual machines (droplets), managed databases, and Kubernetes 
-clusters, making it a popular choice for hosting applications, including LLM 
-inference servers like Ollama, for around 20$ per month. We'll be making use
-of the option to deploy a docker file from your GitHub repository.
-
-
-## Implementation
-
-# ---- COMMENT: add the implementation steps here ----
+Now let's dive straight into the implementation. 
+We'll setup two tables in supabase and create an n8n workflow 
+with an AI Agent that can use it as a tool.
 
 ### Pre-requisites
+You'll need to set up a few accounts
 - [n8n](https://n8n.io/) account
 - Supabase: [Sign up](https://supabase.com/) and start a new project
-- [Digital Ocean](https://www.digitalocean.com/) account
-- OpenAi account and API key
+- OpenAi account and API key. This is **optional**, you can also use other chat models in the agent.
 
+Since the embeddings that will be created by our crawler are made with an Ollama model and we will be running n8n remotely, we need **an **Ollama** service deployed remotely**. Follow our tutorial (REF OLLAMA-DO article) to set up ollama remotely on Digital Ocean.
 
-# ---- COMMENT: i restructured this bit ----
 
 ### Supabase init
 We start with a SQL file that sets up the foundational schema for using
-Supabase as a vector database to support RAG. 
+Supabase as a vector database to support RAG. We split it into three part here, to make it more readable.
+
 First, we enable the `pgvector` extension, which allows for storing and 
 querying high-dimensional vectors—essential for working with embeddings from 
 language models. We then create two tables. One, `crawled_pages`, which stores
@@ -182,14 +150,14 @@ create table documents (
 );
 ```
 
-The script also defines a custom SQL function, `match_documents`, which
-performs a vector similarity search using the `<=>` operator to compute cosine
-distance between the query embedding and stored document embeddings. It 
-supports optional filtering based on JSON metadata and returns the most similar
-documents sorted by relevance. This function enables efficient retrieval of 
-contextually relevant content for use in our RAG pipeline.
+The final part of the script defines a custom SQL function: `match_documents`. 
+It performs a vector similarity search using the `<=>` operator to compute cosine
+distance between the query embedding and stored document embeddings. 
+It supports optional filtering based on JSON metadata and returns the most similar
+documents sorted by relevance. 
+This function enables efficient retrieval of contextually relevant 
+content for use in our RAG pipeline.
 
-# ---- COMMENT: could add in-line comments on what is what ----
 
 ```sql
 -- Create a function to search for documents
@@ -220,375 +188,34 @@ begin
 end;
 $$;
 ```
+
 To run the script open the `SQl Editor` in your Supabase project, paste the 
 snippets and click `RUN`.
 ![supabase_init](pictures/supabase_init.png)
 
 
-# ---- COMMENT: also did some restructuring in this bit ----
-
-### Code for crawling and embedding
-
-Next we will set up the code for crawling all the pages on a given domain,
-cleaning, chunking and embedding the content and storing page data and
-embeddings to Supabase.
-
-The repo is structured in the following:
-```
-├── requirements.txt
-├── .env
-├── src
-    ├── embed.py
-    ├── main.py
-    └── sb.py
-```
-
-#### **`.env`**
-We define the project's environment variables here.
-For `SUPABASE_URL` and `SUPABASE_KEY` go to your Supabase project
-`Project Settings`>`Data API`.
-
-```bash
-SUPABASE_URL="<YOUR_SUPABASE_PROJECT_URL>"
-SUPABASE_KEY="<anon public key>"
-SUPABASE_TABLE_NAME_PAGES=crawled_pages
-SUPABASE_TABLE_NAME_DOCUMENTS=documents
-```
-
-
-#### **`requirements.txt`**
-# ---- COMMENT: do we actually need this here? it would be in the repo i assume ----
-The project requirements are the following:
-```
-Crawl4AI==0.6.2
-supabase==2.15.0
-langchain==0.3.24
-langchain_community==0.3.22
-langchain-ollama==0.3.2
-```
-
-#### **`main.py`**
-The `main.py` script orchestrates the full web crawling and document embedding
-pipeline using `crawl4ai`, Supabase, and a local embedding model. It 
-asynchronously crawls a target website (e.g., `https://nexergroup.com`) using 
-a configurable browser and deep crawl strategy, extracts and cleans HTML 
-content, and processes the results. 
-
-Successful crawls are stored in a Supabase table `crawled_pages` and passed 
-through a document embedding function for vectorization (see `embed.py` later).
-The setup enables automated content ingestion, transformation, and storage for
-RAG applications.
-
-# ---- COMMENT ----
-I'd break up the main and make text comments inbetween. Maybe could have an
-abstract level main first and then walk through its steps, although that could
-be potentially confusing. I'd also keep code to minimum, so the browser /
-crawler arguments could go (save for most essential i.e. strategy). We (ah...I)
-should do a writeup on crawling and would be best to link it there to learn
-more about specific settings
-# ---- COMMENT END ----
-
-```python
-import asyncio
-from crawl4ai import AsyncWebCrawler
-from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig, CacheMode
-from crawl4ai.deep_crawling import BFSDeepCrawlStrategy
-from sb import get_client  # helper to get the Supabase client
-from embed import embed_documents  # Function to embed crawled documents (see later)
-from supabase import PostgrestAPIError
-import os
-
-async def main():
-    url = "https://nexergroup.com"  # Target website for crawling
-
-    # Configuration for the browser used in crawling
-    browser_cfg = BrowserConfig(
-        text_mode=True,  # Extract only visible text (no images/media)
-    )
-
-    # Configuration for how the crawler should run
-    run_cfg = CrawlerRunConfig(
-        excluded_tags=["script", "style", "form", "header", "footer", "nav"],  # Remove unwanted HTML tags
-        excluded_selector="#nexer-navbar",  # Skip specific page element by CSS selector
-        only_text=True,  # Extract just the text
-        remove_forms=True,  # Skip form elements
-        exclude_social_media_links=True,  # Don't follow social links 
-        exclude_external_links=True,  # Stay within the main domain
-        remove_overlay_elements=True,  # Clean overlays/popups
-        magic=True,  # Let crawler auto-tune settings if needed
-        simulate_user=True,  # Behave like a real user (e.g., scrolling, clicking)
-        override_navigator=True,  # Mask headless browser properties
-        verbose=True,  # Output crawl logs
-        cache_mode=CacheMode.DISABLED,  # Disable caching of visited pages
-        stream=True,  # Stream results as they're found
-
-        # Set up depth-limited crawling strategy (BFS = breadth-first search)
-        deep_crawl_strategy=BFSDeepCrawlStrategy(
-            max_depth=2,  # Crawl up to 2 levels deep from the starting page
-            include_external=False,  # Stay within the same domain
-            # max_pages=10  # Optional: limit number of pages, good for debugging
-        ),
-    )
-
-    # Initialize the asynchronous crawler with Playwright
-    async with AsyncWebCrawler(
-        config=browser_cfg,
-        verbose=True,
-        debug=True,
-        use_playwright=True,  # Use Playwright for browser automation
-    ) as crawler:
-
-        # Crawl the site using provided run configuration
-        async for result in await crawler.arun(
-            url=url,
-            config=run_cfg
-        ):
-            process_result(result)  # handles the crawl output (one result = one page)
-
-def process_result(result):
-    """
-    Process the result returned from the crawler
-    """
-    if result.success:
-        # Convert result object into a dictionary
-        result_json = result_dict(result)
-
-        # Initialize Supabase client
-        sb_client = get_client()
-
-        try:
-            # Insert the crawled data into Supabase
-            table_name = os.getenv("SUPABASE_TABLE_NAME_PAGES", "crawled_pages")
-
-            sb_client.table(table_name).insert(result_json).execute()
-        except PostgrestAPIError as e:
-            print(f"Error inserting into Supabase: {e}")
-        
-        try:
-            # Generate embeddings for the document and store them using the Supabase client
-            embed_documents(result_json, sb_client)
-        except Exception as e:
-            print(f"Error embedding documents: {e}")
-
-        print("Data inserted and embedded successfully.")
-    
-    else:
-        # Log any crawl failure along with the error message
-        print(f"Crawl failed: {result.error_message}")
-
-def result_dict(result) -> dict:
-    """
-    convert the result object into a dictionary
-    """
-    return {
-        "url": result.url,
-        "links": result.links,
-        "metadata": result.metadata,
-        "markdown": result.markdown,
-        "html": result.html,
-        "cleaned_html": result.cleaned_html,
-    }
-
-# Entry point: runs the main crawler function in an asyncio event loop
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-We will now look into the two modules called by the main.
-
-#### **`sb.py`**
-The `sb` module us defined as a helper to create the Supabase client:
-```python 
-import os
-from supabase import create_client, Client
-
-def get_client()-> Client:
-    """
-    This function creates a Supabase client using the URL and key from environment variables.
-    """
-    url: str = os.environ.get("SUPABASE_URL")
-    key: str = os.environ.get("SUPABASE_KEY")
-    return create_client(url, key)
-```
-
-
-#### **`embed.py`**
-The `embed_documents` function in `embed.py`, processes and stores crawled web
-content into our Supabase vector database: 
-- cleaned HTML produced by Crawl4AI 
-- splits it into semantically meaningful chunks using HTML headers
-- embeds each chunk using the `nomic-embed-text` model via Ollama
-
-These embeddings, along with associated metadata, are stored in the Supabase
-`documents` table using LangChain’s `SupabaseVectorStore`. This setup enables
-efficient semantic search and retrieval, which is crucial for building RAG
-applications.
-```python
-from langchain_community.vectorstores import SupabaseVectorStore
-from langchain_text_splitters import HTMLSemanticPreservingSplitter  # Preserves HTML structure while splitting
-from langchain_ollama import OllamaEmbeddings  # Interface for embedding with Ollama models
-from langchain.docstore.document import Document  # Document object used by LangChain
-from supabase import Client
-
-def embed_documents(result:dict, supabase_client:Client):
-    """
-    Splits a crawled HTML document into semantic chunks, generates embeddings using an Ollama model,
-    and stores the resulting vectors in a Supabase vector store.
-    """
-
-    # Define which HTML headers to split on (semantic chunking)
-    headers_to_split_on = [
-        ('h1', 'header1'),
-        ('h2', 'header2'),
-        ('h3', 'header3'),
-    ]
-
-    # Create the text splitter with a max chunk size
-    text_splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=headers_to_split_on,
-        max_chunk_size=1000
-    )
-
-    # Split the cleaned HTML into smaller semantically meaningful chunks
-    docs = text_splitter.split_text(result['cleaned_html'])
-
-    # Add metadata and unique IDs to each chunked document
-    for i, doc in enumerate(docs):
-        doc.metadata = {
-            'metadata': result['metadata'],
-            'url': result['url'],
-        }
-        doc.id = result['url'] + '__' + str(i)  # Unique ID for each chunk
-
-    # Initialize the Ollama embeddings model (using nomic-embed-text)
-    embeddings = OllamaEmbeddings(model="nomic-embed-text")
-
-    # Store the embedded documents into Supabase vector store for later retrieval
-    vector_store = SupabaseVectorStore.from_documents(
-        docs,                         # List of chunked documents
-        embeddings,                   # Embedding model
-        client=supabase_client,       # Supabase client connection
-        table_name="documents",       # Target table for vector storage
-        query_name="match_documents", # Name of the query function for retrieval (see init sql)
-    )
-```
-
-# ---- COMMENT ----
-I think the below should be anchored / linked back to what was said before.
-Maybe with something like "putting it all together" or such. I feel at this
-point we have looked through much code in detail and might feel lost on how
-it all works together.
-# ---- COMMENT END ----
-
-We will have one row per page in `crawled_pages` with useful extracted data
-such internal and external urls, text, html and other metadata (for example:
-title, author, some crawl specific data:depth (crawl depth), parent-url as well
-as [Open Graph data](https://ogp.me/) ).
-
-The `documents` table will hold several rows per page, one for each chunk that
-got embedded.
-
-# ---- COMMENT ----
-I would also signpost here too. Referring back to the short step description at
-the beginning of the article ([Implementation](#implementation)).
-I also think going into the details of containerising Ollama might be an 
-overkill / too much. Could just provide the code and refer to another article 
-on using Docker.
-Or maybe even host it locally and say during the putting things together in n8n
-that we could also create a containerised version and use that instead.
-# ---- COMMENT END ----
-
-### Ollama on digital ocean
-Let's walk through the steps to deploy an app on Digital Ocean from a 
-dockerfile on GitHub. 
-
-#### A simple Ollama Dockerfile
-Create a repo with the following Dockerfile:
-```Dockerfile
-# Start from the official Ollama image as the builder stage
-FROM ollama/ollama:latest AS builder
-
-# Define a build-time argument for the model name, allowing it to be passed when building the image
-ARG MODEL_NAME_ENV
-# Set an environment variable with a default model if none is provided
-ENV MODEL_NAME=${MODEL_NAME_ENV:-nomic-embed-text}
-
-# Start the Ollama server in the background, wait a bit for it to initialize,
-# then pull the specified model so it's available in the final image
-RUN ollama serve & \
-    sleep 3 && \
-    ollama pull ${MODEL_NAME}
-
-# Use a fresh Ollama image for the final stage to keep it clean and minimal
-FROM ollama/ollama:latest
-
-# Copy the downloaded model data from the builder stage to this image
-COPY --from=builder /root/.ollama /root/.ollama  
-
-# Set the default command to start the Ollama server when the container runs
-CMD ["serve"]
-```
-
-This Dockerfile sets up a minimal Ollama-based container for serving an LLM 
-model, using a two-stage build to preload the specified model (defaulting to 
-[`nomic-embed-text`](https://ollama.com/library/nomic-embed-text) in our case) 
-and copy it into a clean runtime image. 
-
-While it's well-suited for development or prototyping, **it should not be used 
-in production environments** as it lacks essential security configurations such
-as authentication, encrypted communication (TLS), and resource restrictions. 
-
-Ollama doesn’t support setting API Key. The Ollama team recommends using a 
-reverse proxy. Here's a 
-[good article](https://medium.com/@qdrddr/ollama-with-apikey-litellm-proxy-c675c32ce7e8) 
-on a workaround. 
-
-We'll keep it simple here and just deploy our dockerfile on Digital Ocean.
-
-#### Deploy the Dockerfile on Digital Ocean
-In [Digital Ocean](https://www.digitalocean.com/) log into your account and:
-- create a project
-- click `create`>`App Platform`
-- connect to your GitHub account
-- select the repo with the Dockerfile you want to deploy
-
-![digital_ocean_app](pictures/digital_ocean_app.png)
-
-
-The default setting is 2 containers on 1GB RAM (2 x 12$ per month at the time
-of writing). We picked **1 container on a 2GB RAM** instance (it costs almost 
-the same: 25$ per month) to give it a bit more RAM. 
-
-The default public port is **8080**, ollama is serving on **port 11434**, so
-we set that as the Public HTTP port of our app.
-
-After clicking `Create app` you'll have access to the URL, copy it for when
-setting up your n8n workflow.
-
-Every time you push changes to your repo Digital Ocean will re-build and
-re-deploy.
-
-
 ### The n8n RAG workflow
-The n8n workflow is straightforward, a chat node, an AI Agent connected to
-OpenAi Chat Model (set up with your credentials), simple memory and the 
-Supabase Vector Store tool using Ollama Embeddings.
+The n8n workflow is straightforward 
+- A chat node 
+- An AI Agent connected to an OpenAi Chat Model (set up with your credentials, you can also pick another model and provider)
+- Simple memory 
+- Supabase Vector Store tool using Ollama Embeddings
 
 ![n8n_workflow](pictures/n8n_workflow.png)
 
-Selecting and connecting the nodes is the easy part and done in a second. We'll 
-now walk through configuring them.
+Selecting and connecting the nodes is the easy part and done in a second. 
+We'll now walk through configuring them.
 
 #### Setting up the Supabase Vector Store node
 
 ![n8n_settings_supabase_vectorstore](pictures/n8n_settings_supabase_vectorstore.png)
 
-To set up the Supabase Vector Store node you need 
-- to provide `SUPABASE_URL` as `Host` and `SUPABASE_KEY` as 
+To set up the Supabase Vector Store node in n8n you need to:
+- Provide `SUPABASE_URL` as `Host` and `SUPABASE_KEY` as 
 `Service Role Secret` in the `Credential to connect with...` sub-menu 
-- write a good description for your agent to understand when and how to use the 
+- Write a good description for your agent to understand when and how to use the 
 vectorstore tool
-- select the `documents` table that holds the embeddings
+- Select the `documents` table that holds the embeddings
 
 >**NOTE**: The default SQL function that will be called to find documents is `match_documents`, which is why we initialized and defined it in Supabase earlier.
 
@@ -601,69 +228,39 @@ our Ollama app hosted on Digital Ocean.
 ![n8n_settings_ollama](pictures/n8n_settings_ollama.png)
 
 For configuring:
-- set the model to the same one used to create the embeddings (and the one
+- Set the model to the same one used to create the embeddings (and the one
 pulled to the Ollama app).
-- click the edit button of `Credential to connect with` 
-- set the Base URL with the URL from your Digital Ocean app.
+- Click the edit button of `Credential to connect with` 
+- Set the Base URL with the URL from your remote ollama service 
+
+>**NOTE**: Check out our quick tutorial to setup up an Ollama endpoint remotely on Digital Ocean (REF OLLMA ARTICLE).
 
 ![n8n_settings_ollama_account](pictures/n8n_settings_ollama_account.png)
 
+# ---- COMMENT: START ----
+## Signpost
+Now we have set up everyhting we need.... only the data is missing bla bla 
+need to crawl 
+# ---- COMMENT: END ----
 
 ## Run the crawl 
 Last step is setting up the cralwer environment and we are ready to run the
 crawl and start chatting with your data.
 
-### install python virtual environment
-```bash
-python -m venv .venv
-.venv/bin/pip install --upgrade pip
-.venv/bin/pip install -r requirements.txt
-```
-
-### set up Crawl4AI
-This will 
-- install required Playwright browsers (Chromium, Firefox, etc.)
-- perform OS-level checks (e.g., missing libs on Linux)
-- confirm your environment is ready to crawl
-```bash
-source .venv/bin/activate 
-crawl4ai-setup
-```
-
-### Get Ollama running locally 
-For embedding locally we'll just start a local Ollama instance and pull `nomic-embed-text model`. You could also let langchain point to the app on Digital Ocean. 
-
-```bash
-docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
-docker exec -it ollama ollama pull nomic-embed-text
-```
-
-To test `ollama` is working locally the following command:
-
-```bash
-curl http://localhost:11434/api/embeddings -d '{
-  "model": "nomic-embed-text",
-  "prompt": "The sky is blue because of Rayleigh scattering"
-}'
-```
-
-should return a json with embedding:
-```json
-{"embedding":[0.5897541046142578,...,-0.48047590]}
-```
-
-### Crawl and Embed
-
-To start the crawl, run the following from the root directory:
-```bash
-source .venv/bin/activate 
-python src/main.py
-```
 
 ## First results
 If you open your Supabase project you should start seeing the `crawled_pages` 
 as well as the `documents` tables being populated. 
 
-Go over to your n8n workflow, open the chat of the chat node and should be able
+Go back to your n8n workflow, open the chat of the chat node and should be able
 to ask questions and get answers!
+
+
+TODO add gif of chat here 
+
+
+## Next steps 
+Make you agent smarter and add the wikipedia node ...
+
+
 
