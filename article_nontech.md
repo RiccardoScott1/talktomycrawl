@@ -1,9 +1,5 @@
 # ---- GENERAL COMMENTS: ----
 
-* great content
-* we should also think about (again) splitting it into two versions
-  * a short seller for non-tech people
-  * a more detailed technical writeup
 * the intro could be more punchy by highlighting / emphasising that this is not
 just a RAG but a tool to turn any web-domain into a conversational DB
   * this would make it distinguishable from all the other RAG stuff
@@ -26,24 +22,12 @@ combining crawl4AI , supabase and n8n
 
 ## **Retrieval-Augmented Generation (RAG) - A brief overview**
 
-prompt: rephrase the following for a non-technical audience with an interest in AI.
-"""
-Retrieval-Augmented Generation (RAG) is a powerful technique that combines the
-generative strength of large language models (LLMs) with the precision of
-retrieval-based systems. Instead of relying solely on a model’s internal
-knowledge, RAG pipelines dynamically pull in relevant external data—like
-documents, websites, or databases—at query time. This dramatically improves
-the factual accuracy and adaptability of LLMs, especially in domain-specific
-or frequently updated contexts.
+**Retrieval-Augmented Generation (RAG)** is an advanced approach that makes AI smarter and more reliable by combining two strengths: the creativity of language models and the accuracy of real-world information. Instead of depending only on what the AI already "knows," RAG helps it look up relevant facts—like searching through documents, websites, or databases—right when you ask a question.
 
-At its core, a RAG workflow retrieves contextually relevant chunks of
-information using semantic search (typically via vector embeddings), then
-passes this context along with the user’s question into an LLM. The result is a
-grounded, contextualized answer that’s both coherent and informed by up-to-date
-data. Whether you're building an internal knowledge assistant or a
-public-facing chatbot, RAG helps ensure your AI is informed, not just
-intelligent.
-"""
+Here's how it works: when you ask something, the system first finds pieces of information related to your question. Then, it gives that information to the AI, which uses it to write a more accurate, clear, and up-to-date response.
+
+This means that whether you're building a helpful assistant for your team or a customer-facing chatbot, RAG helps ensure your AI gives answers that are not just well-written—but actually grounded in real, current knowledge.
+
 
 # ---- COMMENT ----
 
@@ -52,17 +36,17 @@ short bulletpoints list or the more detailed subtitles listing, but not both.
 Or, in the long technical article, have the bullet points and move the longer
 descriptions to where the tools are being used with code / examples. That would
 be good for signposting.
-
 # ---- COMMENT END ----
+
 
 ## The services and tech needed to crawl a website and chat with the content
 We'll briefly cover the various parts of our RAG prototype made of:
-- a python repo to run **Crawl4AI** locally and embed the documents using a
+- a python repo to run [**Crawl4AI**](https://docs.crawl4ai.com/) locally and embed the documents using a
 local ollama container
-- a **Supabase** database to hold the data (hosted by supabase so n8n can
+- a [**Supabase**](https://supabase.com/) database to hold the data (hosted by supabase so n8n can
 access it remotely)
-- **n8n** to create a workflow with a chat and AI agent functionality
-- an **Ollama** service deployed on **Digital Ocean** (so n8n can access it
+- [**n8n**](https://n8n.io/) to create a workflow with a chat and AI agent functionality
+- a [**Ollama**](https://ollama.com/) service deployed on [**DigitalOcean**](https://www.digitalocean.com/) (so n8n can access it
 remotely)
 
 
@@ -75,7 +59,8 @@ integrations and the ability to run JavaScript code or call webhooks, n8n is a
 powerful platform for orchestrating data flows—perfect for building
 Retrieval-Augmented Generation (RAG) applications that combine scraping,
 embedding, storage, and AI querying into a seamless process. You can either use
-the hosted version or self-host wherever you like. Sign-up and start automating 
+the hosted version or self-host wherever you like. Sign-up and start automating.
+
 
 
 ### Supabase 
@@ -192,41 +177,6 @@ should do a writeup on crawling and would be best to link it there to learn
 more about specific settings
 # ---- COMMENT END ----
 
-```python
-
-async def main():
-    url = "https://nexergroup.com"  # Target website for crawling
-
-    # Configuration for the browser used in crawling
-    browser_cfg = BrowserConfig(
-        text_mode=True,  # Extract only visible text (no images/media)
-    )
-
-    # Configuration for how the crawler should run
-    run_cfg = CrawlerRunConfig(
-        ...
-        stream=True,  # Stream results as they're found
-
-        # Set up depth-limited crawling strategy (BFS = breadth-first search)
-        deep_crawl_strategy=BFSDeepCrawlStrategy(
-            max_depth=2,  # Crawl up to 2 levels deep from the starting page
-            include_external=False,  # Stay within the same domain
-            # max_pages=10  # Optional: limit number of pages, good for debugging
-        ),
-    )
-
-    # Initialize the asynchronous crawler with Playwright
-    async with AsyncWebCrawler(config=browser_cfg) as crawler:
-
-        # Crawl the site using provided run configuration
-        async for result in await crawler.arun(
-            url=url,
-            config=run_cfg
-        ):
-            process_result(result)  # handles the crawl output (one result = one page)
-...
-```
-
 
 #### **Embeddings**
 # ---- COMMENT START -----
@@ -247,55 +197,7 @@ These embeddings, along with associated metadata, are stored in the Supabase
 `documents` table using LangChain’s `SupabaseVectorStore`. This setup enables
 efficient semantic search and retrieval, which is crucial for building RAG
 applications.
-```python
-from langchain_community.vectorstores import SupabaseVectorStore
-from langchain_text_splitters import HTMLSemanticPreservingSplitter  # Preserves HTML structure while splitting
-from langchain_ollama import OllamaEmbeddings  # Interface for embedding with Ollama models
-from langchain.docstore.document import Document  # Document object used by LangChain
-from supabase import Client
 
-def embed_documents(result:dict, supabase_client:Client):
-    """
-    Splits a crawled HTML document into semantic chunks, generates embeddings using an Ollama model,
-    and stores the resulting vectors in a Supabase vector store.
-    """
-
-    # Define which HTML headers to split on (semantic chunking)
-    headers_to_split_on = [
-        ('h1', 'header1'),
-        ('h2', 'header2'),
-        ('h3', 'header3'),
-    ]
-
-    # Create the text splitter with a max chunk size
-    text_splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=headers_to_split_on,
-        max_chunk_size=1000
-    )
-
-    # Split the cleaned HTML into smaller semantically meaningful chunks
-    docs = text_splitter.split_text(result['cleaned_html'])
-
-    # Add metadata and unique IDs to each chunked document
-    for i, doc in enumerate(docs):
-        doc.metadata = {
-            'metadata': result['metadata'],
-            'url': result['url'],
-        }
-        doc.id = result['url'] + '__' + str(i)  # Unique ID for each chunk
-
-    # Initialize the Ollama embeddings model (using nomic-embed-text)
-    embeddings = OllamaEmbeddings(model="nomic-embed-text")
-
-    # Store the embedded documents into Supabase vector store for later retrieval
-    vector_store = SupabaseVectorStore.from_documents(
-        docs,                         # List of chunked documents
-        embeddings,                   # Embedding model
-        client=supabase_client,       # Supabase client connection
-        table_name="documents",       # Target table for vector storage
-        query_name="match_documents", # Name of the query function for retrieval (see init sql)
-    )
-```
 
 
 We will have one row per page in `crawled_pages` with useful extracted data
@@ -459,7 +361,7 @@ curl http://localhost:11434/api/embeddings -d '{
 
 should return a json with embedding:
 ```json
-{"embedding":[0.5897541046142578,...,-0.48047590]}
+{"embedding":[0.5897541046142578,...,0.48047590]}
 ```
 
 ### Crawl and Embed
