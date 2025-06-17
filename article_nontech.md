@@ -143,18 +143,7 @@ We set the dimension to 768 because we will be using the
 [nomic-embed-text](https://ollama.com/library/nomic-embed-text) model for 
 creating our embeddings.
 
-The script also defines a custom SQL function, `match_documents`, which
-performs a vector similarity search using the `<=>` operator to compute cosine
-distance between the query embedding and stored document embeddings. It 
-supports optional filtering based on JSON metadata and returns the most similar
-documents sorted by relevance. This function enables efficient retrieval of 
-contextually relevant content for use in our RAG pipeline.
-
-To run the script open the `SQl Editor` in your Supabase project, paste the 
-snippets and click `RUN`.
-![supabase_init](pictures/supabase_init.png)
-
-
+The script is found in the detailed Supabase article (LINK TO SUPABASE ARTICLE)
 
 #### **`main.py`**
 The `main.py` script orchestrates the full web crawling and document embedding
