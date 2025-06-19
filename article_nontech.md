@@ -1,24 +1,9 @@
-# ---- GENERAL COMMENTS: ----
+# **Beyond Typical RAG: Chat with the Full Content of Any Website**
+Most RAG tutorials stop at a few documents. This guide shows you how to crawl, embed, and interact with entire domains using open-source tools like Crawl4AI, Supabase, n8n, and Ollama.
 
-* the intro could be more punchy by highlighting / emphasising that this is not
-just a RAG but a tool to turn any web-domain into a conversational DB
-  * this would make it distinguishable from all the other RAG stuff
-  * especially useful for the aforementioned non-tech audiences
-* could be made more reader friendly with a few tweaks
-  * long code blocks could be broken-up with the text explanations
-  * a short abstract of building steps could be added
-  * the end result should be shown (i.e. a conversation with the crawled data)
-    * this could also be shown at the very beginning, so even people who do not
-    intend to read fully can see its effect
-* I would go as far as cutting most technical details which are not directly
-related to setting up the vector DB and the infrastructure on `n8n`.
+![rag_flow](pictures/title.png)
 
-# ---- COMMENT END ----
 
-# Chat with a web domain.....
-combining crawl4AI , supabase and n8n
-
-# ---- COMMENT: add the punchy intro about chat-w/-domain here ----
 
 ## **Retrieval-Augmented Generation (RAG) - A brief overview**
 
@@ -28,15 +13,7 @@ Here's how it works: when you ask something, the system first finds pieces of in
 
 This means that whether you're building a helpful assistant for your team or a customer-facing chatbot, RAG helps ensure your AI gives answers that are not just well-written—but actually grounded in real, current knowledge.
 
-
-# ---- COMMENT ----
-
-I'd keep only one of the below (could split for article types): either the
-short bulletpoints list or the more detailed subtitles listing, but not both.
-Or, in the long technical article, have the bullet points and move the longer
-descriptions to where the tools are being used with code / examples. That would
-be good for signposting.
-# ---- COMMENT END ----
+This tutorial is a quick overview of setting up a domain aware RAG with only opensource tools. The more detialed guides are referenced throughout. 
 
 
 ## The services and tech needed to crawl a website and chat with the content
@@ -48,6 +25,8 @@ access it remotely)
 - [**n8n**](https://n8n.io/) to create a workflow with a chat and AI agent functionality
 - a [**Ollama**](https://ollama.com/) service deployed on [**DigitalOcean**](https://www.digitalocean.com/) (so n8n can access it
 remotely)
+
+![n8n_chat](pictures/nexer_cutgif.gif)
 
 
 ### n8n
@@ -72,6 +51,8 @@ interface and tight integration with modern toolchains, Supabase is ideal for
 hosting and querying embedded data in RAG applications, enabling fast,
 scalable, and secure data access.
 
+To set up n8n and supabase checkout the indepth article REFTO_N8N_SUPABASE.
+
 ### Crawl4AI
 [**Crawl4AI**](https://docs.crawl4ai.com/) is a lightweight, open-source web
 crawling framework designed specifically for AI and machine learning use cases.
@@ -81,193 +62,95 @@ or building RAG pipelines. With built-in support for filtering, rate limiting,
 and customizable parsing logic, Crawl4AI is ideal for developers looking to
 integrate clean, domain-specific data into LLM workflows.
 
+To set up the crawler checkout the indepth article REFTO_CRAWLER.
+
 
 ### LLaMA and ollama
-[**LLaMA (Large Language Model Meta AI)**](https://www.llama.com/) is a family
-of open-source large language models developed by Meta, designed to provide
-high performance while being more resource-efficient than many other models in
-the same class. LLaMA models have been widely adopted in the AI community for 
-their accessibility, strong multilingual capabilities, and ease of fine-tuning 
-on domain-specific tasks. They are particularly well-suited for building local,
-privacy-respecting applications such as RAG (retrieval-augmented generation)
-systems, chatbots, and summarizers—especially when low-latency inference is 
-required without relying on external APIs.
+[**LLaMA (Large Language Model Meta AI)**](https://www.llama.com/) is a powerful family of open-source AI models that can understand and generate human-like text. What makes LLaMA special is that it's designed to be fast and efficient, so it can run on local machines without needing expensive cloud services. It's especially useful for building tools like chatbots, search assistants, or text summarizers that respect user privacy and don’t require sending data to outside servers.
 
-[**Ollama**](https://ollama.com/) is a developer-friendly tool that simplifies 
-the deployment and management of LLaMA and other open-source language models
-via Docker containers (see [git-repo](https://github.com/ollama/ollama) and 
-[docker-hub](https://hub.docker.com/r/ollama/ollama)). It abstracts away the
-complexity of setting up inference servers by offering a clean interface to run 
-models locally with just a few commands. With Ollama, you can easily load, 
-switch, and interact with LLaMA models using HTTP endpoints—making it an
-excellent choice for embedding models into workflows like n8n or integrating
-with data pipelines hosted on platforms like Supabase. This streamlined setup
-allows developers to run powerful LLMs on their own infrastructure, reducing 
-dependencies on cloud-based services and improving control over cost and data
-privacy.
+[**Ollama**](https://ollama.com/) is a simple tool that makes it easy to run LLaMA and similar AI models on your own computer. Instead of dealing with complicated setup steps, Ollama lets you start using these models with just a few quick commands. It’s ideal for developers who want to add AI to their apps or workflows—like automating tasks or analyzing text—without depending on big tech platforms. With Ollama, you get more control over how your AI runs and where your data stays.
+
 
 ### Digital Ocean
-[**DigitalOcean**](https://www.digitalocean.com/) is a cloud infrastructure 
-provider known for its simplicity and developer-friendly tools. It offers 
-scalable virtual machines (droplets), managed databases, and Kubernetes 
-clusters, making it a popular choice for hosting applications, including LLM 
-inference servers like Ollama, for around 20$ per month. We'll be making use
-of the option to deploy a docker file from your GitHub repository.
+**DigitalOcean** is a cloud service that makes it easy to run websites, apps, or tools on the internet. It’s popular for its simple setup and affordable pricing—often around \$20 per month. You can use it to host powerful tools like AI models without needing your own server hardware.
 
+In this case, we’ll use DigitalOcean to run our AI setup by uploading a file (called a Docker file) from a GitHub project. This lets us quickly deploy everything we need to get the system running smoothly in the cloud.
+
+
+To set up an ollama endpoint on DigitalOcean checkout the indepth article REFTO_OLLAMA_DO.
 
 ## Implementation
-
-# ---- COMMENT: add the implementation steps here ----
-
 ### Pre-requisites
 - [n8n](https://n8n.io/) account
 - Supabase: [Sign up](https://supabase.com/) and start a new project
 - [Digital Ocean](https://www.digitalocean.com/) account
-- OpenAi account and API key
+- OpenAi account and API key 
 
+### **Supabase setup**
+We begin with a setup file that prepares Supabase (a backend service) to work as a **smart search database** for our AI system. This setup lets us store and search information in a way that makes sense to language models.
 
-# ---- COMMENT: i restructured this bit ----
+First, we turn on a feature called `pgvector`, which allows the database to handle special data types called *embeddings*—these are how AI models understand and represent text-essentially a list of N numbers $[0.5897541046142578,...,0.48047590]$ where N is referred to as the size of the embedding. Then, we create two key tables:
 
-### Supabase init
-We start with a SQL file that sets up the foundational schema for using
-Supabase as a vector database to support RAG. 
-First, we enable the `pgvector` extension, which allows for storing and 
-querying high-dimensional vectors—essential for working with embeddings from 
-language models. We then create two tables. One, `crawled_pages`, which stores
-raw and processed data from web crawls (including HTML, markdown, and
-metadata), the second one, `documents`, which holds the actual vectorized 
-content used for semantic search, along with metadata and embeddings of 
-dimension 768. 
+* One called **`crawled_pages`** stores site level data
+* The second, **`documents`**, holds the transformed content that the AI can search through. This includes both the text and its embedding
 
-We set the dimension to 768 because we will be using the
-[nomic-embed-text](https://ollama.com/library/nomic-embed-text) model for 
-creating our embeddings.
+We set the embedding size to 768, because we’ll be using a Llama model called **nomic-embed-text**, which creates these AI-friendly representations of text.
 
-The script is found in the detailed Supabase article (LINK TO SUPABASE ARTICLE)
+The script and more detail on setting up SupaBase is found here(LINK TO SUPABASE ARTICLE).
+![supabase](pictures/supabase_init.png)
 
-#### **`main.py`**
-The `main.py` script orchestrates the full web crawling and document embedding
+### **Crawler**
+The crawler component orchestrates the full web crawling and document embedding
 pipeline using `crawl4ai`, Supabase, and a local embedding model. It 
-asynchronously crawls a target website (e.g., `https://nexergroup.com`) using 
-a configurable browser and deep crawl strategy, extracts and cleans HTML 
-content, and processes the results. 
-
-Successful crawls are stored in a Supabase table `crawled_pages` and passed 
-through a document embedding function for vectorization (see `embed.py` later).
-The setup enables automated content ingestion, transformation, and storage for
-RAG applications.
-
-# ---- COMMENT ----
-I'd break up the main and make text comments inbetween. Maybe could have an
-abstract level main first and then walk through its steps, although that could
-be potentially confusing. I'd also keep code to minimum, so the browser /
-crawler arguments could go (save for most essential i.e. strategy). We (ah...I)
-should do a writeup on crawling and would be best to link it there to learn
-more about specific settings
-# ---- COMMENT END ----
+- crawls a target website (e.g., `https://nexergroup.com`) 
+- follows all links within the same domain
+- extracts and cleans HTML content
+- processes the results into 
+  - **`crawled_pages`**: site specific data e.g. cleaned html, metadata, internal external links and social media data ([Open Graph data](https://ogp.me/))
+  - **`documents`**: page content in semantically meaningful text chunks using HTML headers, and their embeddings from the **nomic-embed-text** model 
 
 
-#### **Embeddings**
-# ---- COMMENT START -----
-example of an embedding , 
-add exapmle texts and chunks from one page???
-# ---- COMMENT END -----
+### How to Launch an AI App on DigitalOcean Using a GitHub File
 
-part of `process_result()` ... The `embed_documents` function in `embed.py`, processes and stores crawled web
-content into our Supabase vector database: 
-- cleaned HTML produced by Crawl4AI 
-- splits it into semantically meaningful chunks using HTML headers
-- embeds each chunk using the `nomic-embed-text` model via Ollama
+Let’s walk through how to put a basic AI app online using **DigitalOcean** and a special setup file (called a *Dockerfile*) stored on **GitHub**.
 
 
+#### What This Dockerfile Does
 
+We’ll start by creating a GitHub project that contains a file with instructions to run an AI tool called **Ollama**. This tool lets us use a language model to understand or analyze text.
 
-These embeddings, along with associated metadata, are stored in the Supabase
-`documents` table using LangChain’s `SupabaseVectorStore`. This setup enables
-efficient semantic search and retrieval, which is crucial for building RAG
-applications.
+The file:
 
+* Downloads and prepares the AI model (by default, it uses one called [`nomic-embed-text`](https://ollama.com/library/nomic-embed-text)).
+* Gets the system ready to serve the model so we can connect to it from other tools.
 
+**Note:** This setup is great for testing or small projects, but it’s **not meant for production**—it doesn’t include security features like encryption or user logins.
 
-We will have one row per page in `crawled_pages` with useful extracted data
-such internal and external urls, text, html and other metadata (for example:
-title, author, some crawl specific data:depth (crawl depth), parent-url as well
-as [Open Graph data](https://ogp.me/) ).
+If you need security (like API keys), the Ollama team recommends adding a middle layer called a **reverse proxy**. [This article](https://medium.com/@qdrddr/ollama-with-apikey-litellm-proxy-c675c32ce7e8) explains how to do that.
 
-The `documents` table will hold several rows per page, one for each chunk that
-got embedded.
+The Dockerfile and more details on DigitalOcean deployment can be found here (REF TO OLLAMA_DO article)
 
+#### Putting It Online with DigitalOcean
 
+To get your AI app running on the web:
 
-### Ollama on digital ocean
-Let's walk through the steps to deploy an app on Digital Ocean from a 
-dockerfile on GitHub. 
+1. Go to [DigitalOcean](https://www.digitalocean.com/) and log in.
+2. Create a new **project**.
+3. Click **Create > App Platform**.
+4. Connect your GitHub account.
+5. Select the GitHub repo with your Dockerfile.
 
-#### A simple Ollama Dockerfile
-Create a repo with the following Dockerfile:
-```Dockerfile
-# Start from the official Ollama image as the builder stage
-FROM ollama/ollama:latest AS builder
+> Tip: We recommend choosing **1 container with 2GB of RAM** — it costs around \$25/month and gives you better performance than the default (which is 2 smaller containers).
 
-# Define a build-time argument for the model name, allowing it to be passed when building the image
-ARG MODEL_NAME_ENV
-# Set an environment variable with a default model if none is provided
-ENV MODEL_NAME=${MODEL_NAME_ENV:-nomic-embed-text}
+6. Change the default web port from **8080** to **11434**, which is the port Ollama uses.
 
-# Start the Ollama server in the background, wait a bit for it to initialize,
-# then pull the specified model so it's available in the final image
-RUN ollama serve & \
-    sleep 3 && \
-    ollama pull ${MODEL_NAME}
+Once you click **Create App**, your AI app will be live! You’ll get a public URL—save this, as you’ll need it if you're using tools like **n8n** to connect to your app.
 
-# Use a fresh Ollama image for the final stage to keep it clean and minimal
-FROM ollama/ollama:latest
-
-# Copy the downloaded model data from the builder stage to this image
-COPY --from=builder /root/.ollama /root/.ollama  
-
-# Set the default command to start the Ollama server when the container runs
-CMD ["serve"]
-```
-
-This Dockerfile sets up a minimal Ollama-based container for serving an LLM 
-model, using a two-stage build to preload the specified model (defaulting to 
-[`nomic-embed-text`](https://ollama.com/library/nomic-embed-text) in our case) 
-and copy it into a clean runtime image. 
-
-While it's well-suited for development or prototyping, **it should not be used 
-in production environments** as it lacks essential security configurations such
-as authentication, encrypted communication (TLS), and resource restrictions. 
-
-Ollama doesn’t support setting API Key. The Ollama team recommends using a 
-reverse proxy. Here's a 
-[good article](https://medium.com/@qdrddr/ollama-with-apikey-litellm-proxy-c675c32ce7e8) 
-on a workaround. 
-
-We'll keep it simple here and just deploy our dockerfile on Digital Ocean.
-
-#### Deploy the Dockerfile on Digital Ocean
-In [Digital Ocean](https://www.digitalocean.com/) log into your account and:
-- create a project
-- click `create`>`App Platform`
-- connect to your GitHub account
-- select the repo with the Dockerfile you want to deploy
+Any time you update your code and push it to GitHub, DigitalOcean will **automatically rebuild and redeploy** your app.
 
 ![digital_ocean_app](pictures/digital_ocean_app.png)
 
 
-The default setting is 2 containers on 1GB RAM (2 x 12$ per month at the time
-of writing). We picked **1 container on a 2GB RAM** instance (it costs almost 
-the same: 25$ per month) to give it a bit more RAM. 
-
-The default public port is **8080**, ollama is serving on **port 11434**, so
-we set that as the Public HTTP port of our app.
-
-After clicking `Create app` you'll have access to the URL, copy it for when
-setting up your n8n workflow.
-
-Every time you push changes to your repo Digital Ocean will re-build and
-re-deploy.
 
 
 ### The n8n RAG workflow
@@ -310,61 +193,23 @@ pulled to the Ollama app).
 ![n8n_settings_ollama_account](pictures/n8n_settings_ollama_account.png)
 
 
+
 ## Run the crawl 
 Last step is setting up the cralwer environment and we are ready to run the
-crawl and start chatting with your data.
+crawl and start chatting with your data. Follow the steps here (REF TO CRAWLER article) to 
+- Install python virtual environment
+- Set up Crawl4AI
+- Get Ollama running locally
+- Start the crawl
 
-### install python virtual environment
-```bash
-python -m venv .venv
-.venv/bin/pip install --upgrade pip
-.venv/bin/pip install -r requirements.txt
-```
-
-### set up Crawl4AI
-This will 
-- install required Playwright browsers (Chromium, Firefox, etc.)
-- perform OS-level checks (e.g., missing libs on Linux)
-- confirm your environment is ready to crawl
-```bash
-source .venv/bin/activate 
-crawl4ai-setup
-```
-
-### Get Ollama running locally 
-For embedding locally we'll just start a local Ollama instance and pull `nomic-embed-text model`. You could also let langchain point to the app on Digital Ocean. 
-
-```bash
-docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
-docker exec -it ollama ollama pull nomic-embed-text
-```
-
-To test `ollama` is working locally the following command:
-
-```bash
-curl http://localhost:11434/api/embeddings -d '{
-  "model": "nomic-embed-text",
-  "prompt": "The sky is blue because of Rayleigh scattering"
-}'
-```
-
-should return a json with embedding:
-```json
-{"embedding":[0.5897541046142578,...,0.48047590]}
-```
-
-### Crawl and Embed
-
-To start the crawl, run the following from the root directory:
-```bash
-source .venv/bin/activate 
-python src/main.py
-```
-
-## First results
-If you open your Supabase project you should start seeing the `crawled_pages` 
+As soon as the crawler is running, the first pages will start being processed. If you open your Supabase project you should start seeing the `crawled_pages` 
 as well as the `documents` tables being populated. 
 
+## Chat with your domain
 Go over to your n8n workflow, open the chat of the chat node and should be able
 to ask questions and get answers!
+
+## Conclusion
+This guide covered the essentials—from crawling and embedding web content, to deploying your model with Docker, to connecting it all in n8n. Now you're ready to build AI workflows that are not just powerful—but fully yours.
+
 

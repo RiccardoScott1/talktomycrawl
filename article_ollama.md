@@ -1,10 +1,18 @@
-# Deploy Ollama remotely on Digital Ocean
-an **Ollama** service deployed on **Digital Ocean** (so n8n can access it remotely)
+# Own the Stack: Deploying Ollama Models on DigitalOcean
+Host your own LLM with Ollama on DigitalOcean—cut costs, keep your data private, and gain full control over your AI stack.
 
-## Introduction
-# ---- COMMENT START ----
-write an introduction that motivates the need to use an ollama model served within your cloud infrastructure as opposed to using API calls to services like OpenAI/google and anthropic
-# ---- COMMENT END ----
+## Why Run Your Own LLM Instead of Using OpenAI or Google?
+
+Hosted LLM APIs like OpenAI, Google, and Anthropic are great for getting started—but they come with tradeoffs: high per-token costs, limited control, and zero data privacy guarantees.
+
+By running an open-source model like **LLaMA** using **Ollama** on your own infrastructure (e.g., via **DigitalOcean**), you get:
+
+* **Full control** over the model, versioning, and updates
+* **Flat, predictable costs**—no surprise bills
+* **Data privacy by design**—your data never leaves your cloud
+* **Customizability**—swap models, fine-tune, or run offline
+
+With tools like Ollama and DigitalOcean, deploying your own LLM server is fast, affordable, and production-ready. In this guide, we’ll show you how to set it up in minutes—no API keys, no lock-in.
 
 
 ## LLaMA and ollama
@@ -47,7 +55,7 @@ dockerfile on GitHub.
 
 ### Pre-requisites
 - [Digital Ocean](https://www.digitalocean.com/) account
-- github account
+- Github account
 
 
 ### A simple Ollama Dockerfile
@@ -86,11 +94,6 @@ and copy it into a clean runtime image.
 in production environments** as it lacks essential security configurations such
 as authentication, encrypted communication (TLS), and resource restrictions. 
 
-# ---- COMMENT START ----
-NOTE ask CORUN if this could actually still work 'safely' within a VPN....
-# ---- COMMENT END ----
-
-
 Ollama doesn’t support setting an API Key. The Ollama team recommends using a 
 reverse proxy. Here's a 
 [good article](https://medium.com/@qdrddr/ollama-with-apikey-litellm-proxy-c675c32ce7e8) 
@@ -118,9 +121,13 @@ we set that as the Public HTTP port of our app.
 After clicking `Create app` you'll have access to the URL, 
 copy it for sending requests to ollama or setting up your n8n workflow.
 
-The best part: Every time you push changes to your repo Digital Ocean will re-build and
-re-deploy.
+The best part: Every time you push changes to your repo Digital Ocean will re-build and re-deploy.
 
 
-## conclusion
+## **Conclusion**
+
+Hosting your own language model using Ollama on a cloud provider like DigitalOcean gives you full control over how your AI runs—without depending on third-party APIs or sending sensitive data to external services. Whether you're building a RAG system, embedding workflows in n8n, or powering a domain-specific chatbot, this setup provides privacy, speed, and cost predictability.
+
+While services like OpenAI, Google, or Anthropic offer convenience, they also come with constraints—rate limits, vendor lock-in, and recurring API costs. By self-hosting with Ollama, you gain the flexibility to scale, experiment, and integrate open-source LLMs into your own infrastructure on your terms.
+
 

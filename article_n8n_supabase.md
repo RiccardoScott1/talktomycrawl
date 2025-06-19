@@ -256,11 +256,11 @@ Go back to your n8n workflow, open the chat of the chat node and should be able
 to ask questions and get answers!
 
 
-TODO add gif of chat here 
+![n8n_chat](pictures/nexer_cutgif.gif)
 
 
 ## Next steps 
-Make you agent smarter and add the wikipedia node ...
+Why not make your agent smarter and add the wikipedia tool node in n8n?!
 
 
 
